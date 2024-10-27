@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "DL1414")(type "Legacy")(uri "/Users/bas/Downloads/HPDL-1414-20x2-ESP32-master/kicad/DL1414.lib")(options "")(descr ""))
+  (lib (name "Raspberry_Pi_Pico_W_SC0918")(type "KiCad")(uri "/Users/bas/Downloads/Raspberry_Pi_Pico_W_Kicad_Files-main/Raspberry_Pi_Pico_W_SC0918.kicad_sym")(options "")(descr ""))
+)

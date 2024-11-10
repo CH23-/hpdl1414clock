@@ -19,8 +19,8 @@ last_called = 0
 interval = 3600  # 1 hour in seconds, so check NTP every hour.
 
 # Wi-Fi credentials
-SSID = "SSID"       # Replace with your Wi-Fi SSID
-PASSWORD = ""  # Replace with your Wi-Fi password
+SSID = "" # Replace with your Wi-Fi SSID
+PASSWORD = "" # Replace with your Wi-Fi password
 
 chartable = {
     " ":0b0100000,
@@ -128,8 +128,8 @@ def connect_to_wifi():
     wlan.connect(SSID, PASSWORD)
 
     while not wlan.isconnected():
-        printstring("Connecting...",0)
-        time.sleep(1)
+       printstring("Connecting...",0)
+       time.sleep(1)
         
     clearscreen()
     printstring("Connected!",0)
@@ -174,18 +174,23 @@ def get_local_time():
         hour += 1  # Add 1 hour for DST
     return (year, month, day, hour, minute, second)
 
-
 def clock():
     current_time = get_local_time()  # Get the local time
     if current_time[5]%2==1:
         separator=" "
     else:
         separator=":"
-    formatted_time = "{:02d} {} {:02d}{}{:02d}:{:02d}".format(
-    current_time[2], months[current_time[1]-1], 
-    current_time[3], separator, current_time[4], current_time[5]
+    formatted_time = "  {:02d}{}{:02d}{}{:02d}  ".format(
+    current_time[3], separator, current_time[4], separator, current_time[5]
     )
     printstring(formatted_time,0)
+    
+def date():
+    current_time = get_local_time()  # Get the local time
+    formatted_date = " {}-{:02d}-{:02d} ".format(
+    current_time[0], current_time[1], current_time[2]
+    )
+    printstring(formatted_date,0)
 
 def ntp_sync():
     ntptime.settime()  # This will set the time on the Pico W
@@ -200,10 +205,19 @@ def check_and_run():
         ntp_sync()          # Call the function
         last_called = current_time  # Update last called time
 
-
 connect_to_wifi()
 
 while 1:
-    check_and_run()
-    clock()
-    time.sleep_us(100000)
+ check_and_run()
+ clock()
+ time.sleep_us(1000000)
+ clock()
+ time.sleep_us(1000000)
+ clock()
+ time.sleep_us(1000000)
+ clock()
+ time.sleep_us(1000000)
+ clock()
+ time.sleep_us(1000000)
+ date()
+ time.sleep_us(1000000)

@@ -22,7 +22,6 @@ months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Okt", 
 last_called = 0
 interval = 3600  # 1 hour in seconds, so check NTP every hour.
 
-wifitry = 1
 # Wi-Fi credentials
 SSID1 = "" # Replace with your Wi-Fi SSID
 PASSWORD1 = "" # Replace with your Wi-Fi password
@@ -137,61 +136,48 @@ def clearscreen():
 #   STAT_ASSOC_FAIL -- 203
 #   STAT_HANDSHAKE_TIMEOUT -- 204
 
-def connect_to_wifi(): #for some reason this code doesn't work when running from the esp32 c3 super mini
-    SSID = SSID1
-    PASSWORD = PASSWORD1
+time.sleep(3)
+
+NETWORKS = [["ssid2", "password"],["revspace-pub-2.4ghz", ""]]
+
+def connect_to_wifi():
+    network_id = 0
     wlan = network.WLAN(network.STA_IF)
-#    wlan.active(False)
-    time.sleep_us(2000000)
-#    wlan.active(True)
-    printstring("Con?",0)
-    while wlan.status() < 1010:
-        if SSID == SSID1:
-          wlan.active(False)
-          time.sleep_us(1000000)
-          wlan.active(True)
-          time.sleep_us(1000000)
-          wlan.connect(SSID1, PASSWORD1)
-          time.sleep_us(1000000)
-          print(SSID1)
-          print(wlan.status())
-          if wlan.status() < 1010:
-              SSID = SSID2
-              PASSWORD = PASSWORD2
-          else:
-              break
-        elif SSID == SSID2:
-          wlan.active(False)
-          time.sleep_us(1000000)
-          wlan.active(True)
-          time.sleep_us(1000000)
-          wlan.connect(SSID2, PASSWORD2)
-          time.sleep_us(1000000)
-          print(SSID2)
-          print(wlan.status())
-          if wlan.status() < 1010:
-              SSID = SSID3
-              PASSWORD = PASSWORD3
-          else:
-              break
-        elif SSID == SSID3:
-          wlan.active(False)
-          time.sleep_us(1000000)
-          wlan.active(True)
-          time.sleep_us(1000000)
-          wlan.connect(SSID3, PASSWORD3)
-          time.sleep_us(1000000)
-          print(SSID3)
-          print(wlan.status())
-          if wlan.status() < 1010:
-              SSID = SSID1
-              PASSWORD = PASSWORD1
-          else:
-              break
-        print("looped")
-    clearscreen()
-    printstring("CON!",0)
-    print("connected to "+SSID)
+    wlan.active(True)
+    print("connecting to wifi", wlan.status())
+    printstring("con?",0)
+    while not wlan.isconnected():
+        status = wlan.status()
+        try:
+            cur_network = NETWORKS[network_id]
+            print("connecting to", cur_network[0])
+            if cur_network[1] != "":
+                wlan.connect(cur_network[0])
+            else:
+                wlan.connect(cur_network[0], cur_network[1])
+            time.sleep(2)
+            print("stat", status)
+            status = wlan.status()
+            while status == 1001:
+                printstring("con.",0)
+                print("connecting...", status)
+                time.sleep(1)
+                status = wlan.status()
+        except:
+            print("err")
+        finally:
+            if wlan.isconnected():
+                printstring("con!",0)
+                print("connected to", cur_network[0])
+                break
+            else:
+                printstring("econ",0)
+                print("connecting failed", status)
+                wlan.disconnect()
+                time.sleep(4)
+                network_id = (network_id+1)%len(NETWORKS)
+                print("now trying", NETWORKS[network_id])
+    print("connected to wifi?")
 
 def is_dst_europe(year, month, day, hour):
     """

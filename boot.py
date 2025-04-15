@@ -1,10 +1,7 @@
 # This file is executed on every boot (including wake-boot from deepsleep)
-#import esp
-#esp.osdebug(None)
-#import webrepl
-#webrepl.start()
 
 from machine import Pin
+import machine
 import network
 import ntptime
 import time
@@ -18,17 +15,6 @@ network.country('NL')
 
 timezone_offset = 1* 3600
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"]
-
-last_called = 0
-interval = 3600  # 1 hour in seconds, so check NTP every hour.
-
-# Wi-Fi credentials
-SSID1 = "" # Replace with your Wi-Fi SSID
-PASSWORD1 = "" # Replace with your Wi-Fi password
-SSID2 = ""
-PASSWORD2 = ""
-SSID3 = ""
-PASSWORD3 = ""
 
 chartable = {
     " ":0b0100000,
@@ -100,7 +86,6 @@ chartable = {
 
 def letter(inputchar,position):
     lettercode=chartable[inputchar.lower()]
-#    display = position // 4
     position = position % 4
     position = 3 - position
     
@@ -117,7 +102,6 @@ def letter(inputchar,position):
     time.sleep_us(1)
         
 def printstring(text,startingposition):
-#    print(text)
     for i, char in enumerate(text):
         currentposition = startingposition+i
         if currentposition > 11:
@@ -138,46 +122,51 @@ def clearscreen():
 
 time.sleep(3)
 
-NETWORKS = [["ssid2", "password"],["revspace-pub-2.4ghz", ""]]
+NETWORKS = [('SSID1', 'PASSWORD1'), ('SSID2', 'PASSWORD2')]
 
 def connect_to_wifi():
-    network_id = 0
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    print("connecting to wifi", wlan.status())
     printstring("con?",0)
-    while not wlan.isconnected():
-        status = wlan.status()
-        try:
-            cur_network = NETWORKS[network_id]
-            print("connecting to", cur_network[0])
-            if cur_network[1] != "":
-                wlan.connect(cur_network[0])
-            else:
-                wlan.connect(cur_network[0], cur_network[1])
-            time.sleep(2)
-            print("stat", status)
-            status = wlan.status()
-            while status == 1001:
-                printstring("con.",0)
-                print("connecting...", status)
-                time.sleep(1)
+    connected = False
+    while not connected:
+        for (network_name, network_password) in NETWORKS:
+            try:
+                wlan = network.WLAN(network.STA_IF)
+                ip = wlan.ifconfig()[0]
+                if ip != "0.0.0.0":
+                    wlan.disconnect()
+                    wlan.active(False)
+                    time.sleep(4)
+                wlan.active(True)
+                print("first IP check", ip)
+                print("connecting to", network_name)
+                if network_password != "":
+                    wlan.connect(network_name, network_password)
+                    time.sleep(2)
+                else:
+                    wlan.connect(network_name)
                 status = wlan.status()
-        except:
-            print("err")
-        finally:
-            if wlan.isconnected():
-                printstring("con!",0)
-                print("connected to", cur_network[0])
-                break
-            else:
-                printstring("econ",0)
-                print("connecting failed", status)
-                wlan.disconnect()
-                time.sleep(4)
-                network_id = (network_id+1)%len(NETWORKS)
-                print("now trying", NETWORKS[network_id])
+                while status == 1001:
+                    printstring("con.",0)
+                    print("connecting...", status)
+                    time.sleep(1)
+                    status = wlan.status()
+            except Exception as e:
+                print("err", e)
+            finally:
+                if wlan.isconnected():
+                    printstring("con!",0)
+                    print("connected to", network_name)
+                    connected = True
+                    break
+                else:
+                    printstring("econ",0)
+                    print("connecting failed", status)
+                    wlan.disconnect()
+                    wlan.active(False)
+                    time.sleep(4)
+
     print("connected to wifi?")
+    time.sleep(2)
 
 def is_dst_europe(year, month, day, hour):
     """
@@ -235,175 +224,44 @@ def date(): #only month and day, because we have 4 digits
     printstring(formatted_date,0)
 
 def ntp_sync():
-    ntptime.settime()  # This will set the time on the Pico W - hopefully also on the esp32 c3 super mini
+    wlan = network.WLAN(network.STA_IF)
+    ip = wlan.ifconfig()[0]
+    print("second IP check", ip)
+    if ip != "0.0.0.0":
+        ntptime.settime()  # This will set the time on the esp32 c3 super mini
+        print("ntp")
+    else:
+        printstring("NOIP",0)
+        machine.reset()
 
 
-def check_and_run():
-    global last_called
+ntp_last_called = None
+ntp_interval = 3600  # 1 hour in seconds, so check NTP every hour.
+
+def check_and_run_ntp():
+    global ntp_last_called
     current_time = time.time()  # Get the current time in seconds
 
     # Check if the elapsed time since the last call is greater than the interval
-    if current_time - last_called >= interval:
+    if ntp_last_called is None or current_time - ntp_last_called >= ntp_interval:
         ntp_sync()          # Call the function
-        last_called = current_time  # Update last called time
+        ntp_last_called = current_time  # Update last called time
 
 connect_to_wifi()
 
 while 1:
- check_and_run()
+ check_and_run_ntp()
  clock()
- time.sleep_us(1000000)
+ time.sleep(0.5)
  clock()
- time.sleep_us(1000000)
+ time.sleep(0.5)
  clock()
- time.sleep_us(1000000)
+ time.sleep(0.5)
  clock()
- time.sleep_us(1000000)
+ time.sleep(0.5)
+ clock()
+ time.sleep(0.5)
+ clock()
+ time.sleep(0.5)
  date()
- time.sleep_us(1000000)
-
-
-# duur = 200000
-# while 1:
-#     printstring("            ",0)
-#     time.sleep_us(duur)
-#     printstring("!!!!!!!!!!!!",0)
-#     time.sleep_us(duur)
-#     printstring('""""""""""""',0)
-#     time.sleep_us(duur)
-#     printstring("############",0)
-#     time.sleep_us(duur)
-#     printstring("$$$$$$$$$$$$",0)
-#     time.sleep_us(duur)
-#     printstring("%%%%%%%%%%%%",0)
-#     time.sleep_us(duur)
-#     printstring("&&&&&&&&&&&&",0)
-#     time.sleep_us(duur)
-#     printstring("''''''''''''",0)
-#     time.sleep_us(duur)
-#     printstring("<<<<<<<<<<<<",0)
-#     time.sleep_us(duur)
-#     printstring(">>>>>>>>>>>>",0)
-#     time.sleep_us(duur)
-#     printstring("************",0)
-#     time.sleep_us(duur)
-#     printstring("++++++++++++",0)
-#     time.sleep_us(duur)
-#     printstring(",,,,,,,,,,,,",0)
-#     time.sleep_us(duur)
-#     printstring("------------",0)
-#     time.sleep_us(duur)
-#     printstring("............",0)
-#     time.sleep_us(duur)
-#     printstring("////////////",0)
-#     time.sleep_us(duur)
-#     printstring("000000000000",0)
-#     time.sleep_us(duur)
-#     printstring("111111111111",0)
-#     time.sleep_us(duur)
-#     printstring("222222222222",0)
-#     time.sleep_us(duur)
-#     printstring("333333333333",0)
-#     time.sleep_us(duur)
-#     printstring("444444444444",0)
-#     time.sleep_us(duur)
-#     printstring("555555555555",0)
-#     time.sleep_us(duur)
-#     printstring("666666666666",0)
-#     time.sleep_us(duur)
-#     printstring("777777777777",0)
-#     time.sleep_us(duur)
-#     printstring("888888888888",0)
-#     time.sleep_us(duur)
-#     printstring("999999999999",0)
-#     time.sleep_us(duur)
-#     printstring("::::::::::::",0)
-#     time.sleep_us(duur)
-#     printstring(";;;;;;;;;;;;",0)
-#     time.sleep_us(duur)
-#     printstring("{{{{{{{{{{{{",0)
-#     time.sleep_us(duur)
-#     printstring("============",0)
-#     time.sleep_us(duur)
-#     printstring("}}}}}}}}}}}}",0)
-#     time.sleep_us(duur)
-#     printstring("????????????",0)
-#     time.sleep_us(duur)
-#     printstring("@@@@@@@@@@@@",0)
-#     time.sleep_us(duur)
-#     printstring("aaaaaaaaaaaa",0)
-#     time.sleep_us(duur)
-#     printstring("bbbbbbbbbbbb",0)
-#     time.sleep_us(duur)
-#     printstring("cccccccccccc",0)
-#     time.sleep_us(duur)
-#     printstring("dddddddddddd",0)
-#     time.sleep_us(duur)
-#     printstring("eeeeeeeeeeee",0)
-#     time.sleep_us(duur)
-#     printstring("ffffffffffff",0)
-#     time.sleep_us(duur)
-#     printstring("gggggggggggg",0)
-#     time.sleep_us(duur)
-#     printstring("hhhhhhhhhhhh",0)
-#     time.sleep_us(duur)
-#     printstring("iiiiiiiiiiii",0)
-#     time.sleep_us(duur)
-#     printstring("jjjjjjjjjjjj",0)
-#     time.sleep_us(duur)
-#     printstring("kkkkkkkkkkkk",0)
-#     time.sleep_us(duur)
-#     printstring("llllllllllll",0)
-#     time.sleep_us(duur)
-#     printstring("mmmmmmmmmmmm",0)
-#     time.sleep_us(duur)
-#     printstring("nnnnnnnnnnnn",0)
-#     time.sleep_us(duur)
-#     printstring("oooooooooooo",0)
-#     time.sleep_us(duur)
-#     printstring("pppppppppppp",0)
-#     time.sleep_us(duur)
-#     printstring("qqqqqqqqqqqq",0)
-#     time.sleep_us(duur)
-#     printstring("rrrrrrrrrrrr",0)
-#     time.sleep_us(duur)
-#     printstring("ssssssssssss",0)
-#     time.sleep_us(duur)
-#     printstring("tttttttttttt",0)
-#     time.sleep_us(duur)
-#     printstring("uuuuuuuuuuuu",0)
-#     time.sleep_us(duur)
-#     printstring("vvvvvvvvvvvv",0)
-#     time.sleep_us(duur)
-#     printstring("wwwwwwwwwwww",0)
-#     time.sleep_us(duur)
-#     printstring("xxxxxxxxxxxx",0)
-#     time.sleep_us(duur)
-#     printstring("yyyyyyyyyyyy",0)
-#     time.sleep_us(duur)
-#     printstring("zzzzzzzzzzzz",0)
-#     time.sleep_us(duur)
-#     printstring("[[[[[[[[[[[[",0)
-#     time.sleep_us(duur)
-#     printstring("\\\\\\\\\\\\",0)
-#     time.sleep_us(duur)
-#     printstring("]]]]]]]]]]]]",0)
-#     time.sleep_us(duur)
-#     printstring("^^^^^^^^^^^^",0)
-#     time.sleep_us(duur)
-#     printstring("____________",0)
-#     time.sleep_us(duur)
-
-#     printstring(" !\"#$%&'<>*+",0)
-#     time.sleep_us(duur)
-#     printstring(",-./12345678",0)
-#     time.sleep_us(duur)
-#     printstring("90abcdefghij",0)
-#     time.sleep_us(duur)
-#     printstring("klmnopqrstuv",0)
-#     time.sleep_us(duur)
-#     printstring("wxyz:;{=}?@[",0)
-#     time.sleep_us(duur)
-#     printstring("\\]^_ UwU :^}",0)
-#     time.sleep_us(duur)
-
+ time.sleep(1)

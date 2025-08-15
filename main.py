@@ -2,25 +2,34 @@ from machine import Pin
 import network
 import ntptime
 import time
+import os
 
 A0 = Pin(7, Pin.OUT)
 A1 = Pin(8, Pin.OUT)
 WR0 = Pin(9, Pin.OUT)
 WR1 = Pin(10, Pin.OUT)
 WR2 = Pin(11, Pin.OUT)
+WR3 = Pin(12, Pin.OUT)
+WR4 = Pin(13, Pin.OUT)
+WR5 = Pin(14, Pin.OUT)
+WR6 = Pin(15, Pin.OUT)
+WR7 = Pin(16, Pin.OUT)
 WR0.value(1)
 WR1.value(1)
 WR2.value(1)
+WR3.value(1)
+WR4.value(1)
+WR5.value(1)
+WR6.value(1)
+WR7.value(1)
+
+network.country('NL')
 
 timezone_offset = 1* 3600
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"]
 
 last_called = 0
 interval = 3600  # 1 hour in seconds, so check NTP every hour.
-
-# Wi-Fi credentials
-SSID = "" # Replace with your Wi-Fi SSID
-PASSWORD = "" # Replace with your Wi-Fi password
 
 chartable = {
     " ":0b0100000,
@@ -114,26 +123,74 @@ def printstring(text,startingposition):
 #    print(text)
     for i, char in enumerate(text):
         currentposition = startingposition+i
-        if currentposition > 11:
+        if currentposition > 31:
             return
         letter(char, currentposition)
 
 def clearscreen():
-    printstring("            ",0)
-    
+    printstring("                                ",0)
 
-def connect_to_wifi():
+# 2: 'Link NoIP',
+# 1: 'Link Join',
+# 0: 'Link Down',
+# -1: 'Link Fail',
+# -2: 'NoNet',
+# -3: 'BadAuth'
+
+NETWORKS = [["SSID", "PASSWORD"]]
+
+# def connect_to_wifi():
+#     network_id = 0
+#     wlan = network.WLAN(network.STA_IF)
+#     wlan.active(False)
+#     wlan.active(True)
+#     #printstring("connecting to wifi", wlan.status(),0)
+#     #printstring("con?",0)
+#     while not wlan.isconnected():
+#         status = wlan.status()
+#         try:
+#             cur_network = NETWORKS[network_id]
+#             print("connecting to", cur_network[0])
+#             if cur_network[1] != "":
+#                 wlan.connect(cur_network[0])
+#             else:
+#                 wlan.connect(cur_network[0], cur_network[1])
+#             time.sleep(2)
+#             print("stat", status)
+#             status = wlan.status()
+#             while status == 1:
+#                 printstring("connecting to wifi",0)
+#                 print("connecting...", status)
+#                 time.sleep(1)
+#                 status = wlan.status()
+#         except:
+#             print("err")
+#         finally:
+#             if wlan.isconnected():
+#                 printstring("connected to wifi",0)
+#                 print("connected to", cur_network[0])
+#                 break
+#             else:
+#                 printstring("connection failed",0)
+#                 print("connecting failed", status)
+#                 wlan.disconnect()
+#                 time.sleep(4)
+#                 network_id = (network_id+1)%len(NETWORKS)
+#                 print("now trying", NETWORKS[network_id])
+#     print("connected to wifi?")
+
+def do_connect():
     wlan = network.WLAN(network.STA_IF)
+    wlan.active(False)
     wlan.active(True)
-    wlan.connect(SSID, PASSWORD)
-
-    while not wlan.isconnected():
-       printstring("Connecting...",0)
-       time.sleep(1)
-        
-    clearscreen()
-    printstring("Connected!",0)
-
+    if not wlan.isconnected():
+        print('connecting to network...')
+        printstring("connecting to wifi test",0)
+        wlan.connect('ssid', 'password')
+        while not wlan.isconnected():
+            machine.idle()
+    print('network config:', wlan.ifconfig())
+    
 def is_dst_europe(year, month, day, hour):
     """
     Determine if the given date and time is within European DST.
@@ -173,51 +230,268 @@ def get_local_time():
     if is_dst_europe(year, month, day, hour):
         hour += 1  # Add 1 hour for DST
     return (year, month, day, hour, minute, second)
-
+ 
 def clock():
+    separator = " "
     current_time = get_local_time()  # Get the local time
-    if current_time[5]%2==1:
-        separator=" "
-    else:
-        separator=":"
-    formatted_time = "  {:02d}{}{:02d}{}{:02d}  ".format(
-    current_time[3], separator, current_time[4], separator, current_time[5]
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} 1".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
     )
+    time.sleep_us(50000)
     printstring(formatted_time,0)
     
-def date():
-    current_time = get_local_time()  # Get the local time
-    formatted_date = " {}-{:02d}-{:02d} ".format(
-    current_time[0], current_time[1], current_time[2]
+    separator = " "
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} /".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
     )
-    printstring(formatted_date,0)
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    separator = " "
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} -".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    separator = " "
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} \\".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    
+    separator = ":"
+    current_time = get_local_time()  # Get the local time
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} 1".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    separator = ":"
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} /".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    separator = ":"
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} -".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    separator = ":"
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} \\".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
 
+    separator = ":"
+    current_time = get_local_time()  # Get the local time
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} 1".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    separator = ":"
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} /".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    separator = " "
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} -".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
+    separator = " "
+    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} \\".format(
+    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
+    )
+    time.sleep_us(50000)
+    printstring(formatted_time,0)
+    
 def ntp_sync():
-    ntptime.settime()  # This will set the time on the Pico W
-
+    ntpsync=0
+    tries=0
+    global last_called
+    while not ntpsync:
+        try:
+            ntptime.settime()  # This will set the time on the Pico W
+            print("succesfull NTP")
+            printstring("        Time has started.       ",0)
+            ntpsync=1
+            last_called = time.mktime(time.localtime())
+        except Exception as e:  # Catch all exceptions
+            print(f"An error occurred: {e}")
+            printstring("        Time has stopped.       ",0)
+            wlan = network.WLAN(network.STA_IF)
+            if wlan.isconnected():
+                tries=tries+1
+                time.sleep(1)
+                if tries>8:
+                    machine.reset()
+            else:
+                do_connect()
 
 def check_and_run():
     global last_called
     current_time = time.time()  # Get the current time in seconds
-
     # Check if the elapsed time since the last call is greater than the interval
     if current_time - last_called >= interval:
         ntp_sync()          # Call the function
-        last_called = current_time  # Update last called time
 
-connect_to_wifi()
-
+#connect_to_wifi()
+do_connect()
+printstring("       HPDL1414 klok v3.5       ",0)
+time.sleep(1)
+printstring("   Ontworpen door CH23 en Bas   ",0)
+time.sleep(0.5)
+ntp_sync()
+#printstring(("IP is:" ip()),0)
+time.sleep(1)
+clearscreen()      
+      
 while 1:
  check_and_run()
  clock()
- time.sleep_us(1000000)
- clock()
- time.sleep_us(1000000)
- clock()
- time.sleep_us(1000000)
- clock()
- time.sleep_us(1000000)
- clock()
- time.sleep_us(1000000)
- date()
- time.sleep_us(1000000)
+
+# duur = 100000
+# while 1:
+#     printstring("                                ",0)
+#     time.sleep_us(duur)
+#     printstring("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",0)
+#     time.sleep_us(duur)
+#     printstring('""""""""""""""""""""""""""""""""',0)
+#     time.sleep_us(duur)
+#     printstring("################################",0)
+#     time.sleep_us(duur)
+#     printstring("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$",0)
+#     time.sleep_us(duur)
+#     printstring("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",0)
+#     time.sleep_us(duur)
+#     printstring("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&",0)
+#     time.sleep_us(duur)
+#     printstring("''''''''''''''''''''''''''''''''",0)
+#     time.sleep_us(duur)
+#     printstring("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",0)
+#     time.sleep_us(duur)
+#     printstring(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",0)
+#     time.sleep_us(duur)
+#     printstring("********************************",0)
+#     time.sleep_us(duur)
+#     printstring("++++++++++++++++++++++++++++++++",0)
+#     time.sleep_us(duur)
+#     printstring(",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",0)
+#     time.sleep_us(duur)
+#     printstring("--------------------------------",0)
+#     time.sleep_us(duur)
+#     printstring("................................",0)
+#     time.sleep_us(duur)
+#     printstring("////////////////////////////////",0)
+#     time.sleep_us(duur)
+#     printstring("00000000000000000000000000000000",0)
+#     time.sleep_us(duur)
+#     printstring("11111111111111111111111111111111",0)
+#     time.sleep_us(duur)
+#     printstring("22222222222222222222222222222222",0)
+#     time.sleep_us(duur)
+#     printstring("33333333333333333333333333333333",0)
+#     time.sleep_us(duur)
+#     printstring("44444444444444444444444444444444",0)
+#     time.sleep_us(duur)
+#     printstring("55555555555555555555555555555555",0)
+#     time.sleep_us(duur)
+#     printstring("66666666666666666666666666666666",0)
+#     time.sleep_us(duur)
+#     printstring("77777777777777777777777777777777",0)
+#     time.sleep_us(duur)
+#     printstring("88888888888888888888888888888888",0)
+#     time.sleep_us(duur)
+#     printstring("99999999999999999999999999999999",0)
+#     time.sleep_us(duur)
+#     printstring("::::::::::::::::::::::::::::::::",0)
+#     time.sleep_us(duur)
+#     printstring(";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;",0)
+#     time.sleep_us(duur)
+#     printstring("{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{",0)
+#     time.sleep_us(duur)
+#     printstring("================================",0)
+#     time.sleep_us(duur)
+#     printstring("}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}",0)
+#     time.sleep_us(duur)
+#     printstring("????????????????????????????????",0)
+#     time.sleep_us(duur)
+#     printstring("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",0)
+#     time.sleep_us(duur)
+#     printstring("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",0)
+#     time.sleep_us(duur)
+#     printstring("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",0)
+#     time.sleep_us(duur)
+#     printstring("cccccccccccccccccccccccccccccccc",0)
+#     time.sleep_us(duur)
+#     printstring("dddddddddddddddddddddddddddddddd",0)
+#     time.sleep_us(duur)
+#     printstring("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",0)
+#     time.sleep_us(duur)
+#     printstring("ffffffffffffffffffffffffffffffff",0)
+#     time.sleep_us(duur)
+#     printstring("gggggggggggggggggggggggggggggggg",0)
+#     time.sleep_us(duur)
+#     printstring("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",0)
+#     time.sleep_us(duur)
+#     printstring("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii",0)
+#     time.sleep_us(duur)
+#     printstring("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj",0)
+#     time.sleep_us(duur)
+#     printstring("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",0)
+#     time.sleep_us(duur)
+#     printstring("llllllllllllllllllllllllllllllll",0)
+#     time.sleep_us(duur)
+#     printstring("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",0)
+#     time.sleep_us(duur)
+#     printstring("nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",0)
+#     time.sleep_us(duur)
+#     printstring("oooooooooooooooooooooooooooooooo",0)
+#     time.sleep_us(duur)
+#     printstring("pppppppppppppppppppppppppppppppp",0)
+#     time.sleep_us(duur)
+#     printstring("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",0)
+#     time.sleep_us(duur)
+#     printstring("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",0)
+#     time.sleep_us(duur)
+#     printstring("ssssssssssssssssssssssssssssssss",0)
+#     time.sleep_us(duur)
+#     printstring("tttttttttttttttttttttttttttttttt",0)
+#     time.sleep_us(duur)
+#     printstring("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu",0)
+#     time.sleep_us(duur)
+#     printstring("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",0)
+#     time.sleep_us(duur)
+#     printstring("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww",0)
+#     time.sleep_us(duur)
+#     printstring("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",0)
+#     time.sleep_us(duur)
+#     printstring("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",0)
+#     time.sleep_us(duur)
+#     printstring("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",0)
+#     time.sleep_us(duur)
+#     printstring("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[",0)
+#     time.sleep_us(duur)
+#     printstring("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\",0)
+#     time.sleep_us(duur)
+#     printstring("]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]",0)
+#     time.sleep_us(duur)
+#     printstring("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",0)
+#     time.sleep_us(duur)
+#     printstring("________________________________",0)
+#     time.sleep_us(duur)

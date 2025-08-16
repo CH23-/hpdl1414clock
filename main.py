@@ -3,6 +3,7 @@ import network
 import ntptime
 import time
 import os
+from datetime import datetime, timezone
 
 A0 = Pin(7, Pin.OUT)
 A1 = Pin(8, Pin.OUT)
@@ -231,94 +232,21 @@ def get_local_time():
         hour += 1  # Add 1 hour for DST
     return (year, month, day, hour, minute, second)
  
-def clock():
-    separator = " "
-    current_time = get_local_time()  # Get the local time
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} 1".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    separator = " "
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} /".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    separator = " "
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} -".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    separator = " "
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} \\".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    
-    separator = ":"
-    current_time = get_local_time()  # Get the local time
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} 1".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    separator = ":"
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} /".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    separator = ":"
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} -".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    separator = ":"
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} \\".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
 
+def clock():
+    anim = ["1","/","-","\\"]
     separator = ":"
-    current_time = get_local_time()  # Get the local time
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} 1".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
+    i = 0
+    while True:
+        timemili=  datetime.now(tz=timezone.dst()).microsecond
+        current_time = get_local_time()  # Get the local time
+        formatted_time = " It is now {:02d}{}{:02d}{}{:02d}{}{:03d} {}-{:02d}-{:02d} {}".format(
+        current_time[3], separator, current_time[4], separator, current_time[5], separator, timemili, current_time[0], current_time[1], current_time[2] ,anim[i]
+        )
+        time.sleep_us(50000)
+        printstring(formatted_time,0)
+        i = (i + 1) % len(anim)
     
-    separator = ":"
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} /".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    separator = " "
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} -".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
-    
-    separator = " "
-    formatted_time = " It is now {:02d}{}{:02d}{}{:02d} {}-{:02d}-{:02d} \\".format(
-    current_time[3], separator, current_time[4], separator, current_time[5], current_time[0], current_time[1], current_time[2]
-    )
-    time.sleep_us(50000)
-    printstring(formatted_time,0)
     
 def ntp_sync():
     ntpsync=0
